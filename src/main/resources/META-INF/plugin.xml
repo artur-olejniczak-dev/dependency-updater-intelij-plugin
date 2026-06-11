@@ -1,0 +1,31 @@
+<idea-plugin>
+    <id>com.example.dependencyupdater</id>
+    <name>Menedzer Zaleznosci i Podatnosci (LTS)</name>
+    <vendor email="support@example.com" url="http://www.example.com">Przykladowy Autor</vendor>
+
+    <description><![CDATA[
+      Wtyczka wspomagająca zarządzanie zależnościami w projektach Maven.
+      Pozwala na wyszukiwanie nowszych wersji bibliotek, filtrowanie wersji LTS,
+      a także sprawdzanie podatności bezpieczeństwa (CVE) za pomocą OSV API.
+    ]]></description>
+
+    <!-- Zależności od innych wtyczek (aby mieć dostęp do klas Mavena i Javy) -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+    <depends>org.jetbrains.idea.maven</depends>
+    <depends>org.jetbrains.plugins.gradle</depends>
+
+    <!-- Deklaracje rozszerzeń (Extensions) np. okna narzędziowe, akcje, serwisy -->
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Rejestrujemy nasze Tool Window -->
+        <toolWindow id="Dependency Updater" 
+                    secondary="true" 
+                    anchor="bottom" 
+                    icon="AllIcons.General.Warning"
+                    factoryClass="com.example.dependencyupdater.DependencyUpdaterToolWindowFactory"/>
+    </extensions>
+
+    <actions>
+        <!-- Tu w przyszłości można dodać przyciski z górnego menu -->
+    </actions>
+</idea-plugin>
