@@ -9,9 +9,7 @@ import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,6 +17,13 @@ public class GradleParser {
 
     // Wyłapuje: 'group:artifact:version' lub "group:artifact:$version"
     private static final Pattern DEPENDENCY_PATTERN = Pattern.compile("['\"]([a-zA-Z0-9.\\-_]+):([a-zA-Z0-9.\\-_]+):([^'\"]+)['\"]");
+    
+    // Notacja mapowa: group: 'org', name: 'artifact', version: '1.0' (lub bez cudzysłowów dla zmiennej)
+    private static final Pattern MAP_DEPENDENCY_PATTERN = Pattern.compile("group\\s*:\\s*['\"]([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*name\\s*:\\s*['\"]([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*version\\s*:\\s*([^,\\)\\}\\]\\s]+)");
+
+    // TOML (Version Catalogs)
+    private static final Pattern TOML_LIBRARY_REF_PATTERN = Pattern.compile("([a-zA-Z0-9.\\-_]+)\\s*=\\s*\\{\\s*module\\s*=\\s*['\"]([a-zA-Z0-9.\\-_]+):([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*version\\.ref\\s*=\\s*['\"](.*?)['\"]");
+    private static final Pattern TOML_VERSION_PATTERN = Pattern.compile("^\\s*([a-zA-Z0-9.\\-_]+)\\s*=\\s*['\"]([^'\"]+)['\"]", Pattern.MULTILINE);
 
     public List<Dependency> extractDependencies(Project project) {
         List<Dependency> dependencies = new ArrayList<>();
@@ -26,93 +31,121 @@ public class GradleParser {
 
         for (VirtualFile file : gradleFiles) {
             String content = readFileContent(file);
+            
+            // 1. Zwykła notacja 'g:a:v'
             Matcher matcher = DEPENDENCY_PATTERN.matcher(content);
-
             while (matcher.find()) {
-                String groupId = matcher.group(1);
-                String artifactId = matcher.group(2);
-                String versionRaw = matcher.group(3);
+                handleMatchedVersion(matcher.group(1), matcher.group(2), matcher.group(3), project, dependencies);
+            }
 
-                Dependency dep = new Dependency(groupId, artifactId, "");
-
-                // Weryfikacja czy wersja jest zmienną np. $version lub ${version}
-                if (versionRaw.startsWith("$")) {
-                    dep.setVariable(true);
-                    String varName = versionRaw.replace("${", "").replace("}", "").replace("$", "");
-                    dep.setVariableName(varName);
-                    
-                    // Szukamy przypisanej wartości zmiennej w całym projekcie
-                    String resolvedVersion = resolveVariableValue(project, varName);
-                    if (resolvedVersion != null) {
-                        dep = new Dependency(groupId, artifactId, resolvedVersion);
-                        dep.setVariable(true);
-                        dep.setVariableName(varName);
-                        dependencies.add(dep);
-                    }
+            // 2. Notacja mapowa group: '', name: '', version: ''
+            Matcher mapMatcher = MAP_DEPENDENCY_PATTERN.matcher(content);
+            while (mapMatcher.find()) {
+                String versionRaw = mapMatcher.group(3).trim();
+                // Oczyszczamy z ewentualnych cudzysłowów
+                if (versionRaw.startsWith("'") || versionRaw.startsWith("\"")) {
+                    versionRaw = versionRaw.replaceAll("['\"]", "");
                 } else {
-                    dep = new Dependency(groupId, artifactId, versionRaw);
+                    // Jeśli to czysty tekst bez cudzysłowów to w Gradle jest to ZMIENNA
+                    if (!versionRaw.startsWith("$")) versionRaw = "$" + versionRaw; 
+                }
+                handleMatchedVersion(mapMatcher.group(1), mapMatcher.group(2), versionRaw, project, dependencies);
+            }
+        }
+        
+        // 3. Version Catalogs (libs.versions.toml)
+        extractFromToml(project, dependencies);
+
+        return dependencies;
+    }
+
+    private void handleMatchedVersion(String groupId, String artifactId, String versionRaw, Project project, List<Dependency> dependencies) {
+        if (versionRaw.startsWith("$")) {
+            String varName = versionRaw.replace("${", "").replace("}", "").replace("$", "");
+            String resolvedVersion = resolveVariableValue(project, varName);
+            if (resolvedVersion != null) {
+                Dependency dep = new Dependency(groupId, artifactId, resolvedVersion);
+                dep.setVariable(true);
+                dep.setVariableName(varName);
+                dependencies.add(dep);
+            }
+        } else {
+            dependencies.add(new Dependency(groupId, artifactId, versionRaw));
+        }
+    }
+
+    private void extractFromToml(Project project, List<Dependency> dependencies) {
+        Collection<VirtualFile> tomlFiles = FilenameIndex.getVirtualFilesByName("libs.versions.toml", GlobalSearchScope.projectScope(project));
+        for (VirtualFile toml : tomlFiles) {
+            String content = readFileContent(toml);
+            
+            // Najpierw zmapujmy wszystkie wersje
+            Map<String, String> versionsMap = new HashMap<>();
+            Matcher versionMatcher = TOML_VERSION_PATTERN.matcher(content);
+            while (versionMatcher.find()) {
+                versionsMap.put(versionMatcher.group(1), versionMatcher.group(2));
+            }
+
+            // Teraz szukamy bibliotek
+            Matcher libMatcher = TOML_LIBRARY_REF_PATTERN.matcher(content);
+            while (libMatcher.find()) {
+                String groupId = libMatcher.group(2);
+                String artifactId = libMatcher.group(3);
+                String versionRef = libMatcher.group(4);
+                
+                if (versionsMap.containsKey(versionRef)) {
+                    Dependency dep = new Dependency(groupId, artifactId, versionsMap.get(versionRef));
+                    dep.setVariable(true);
+                    dep.setVariableName(versionRef); // Traktujemy toml version.ref jako naszą "zmienną"
                     dependencies.add(dep);
                 }
             }
         }
-        return dependencies;
     }
 
     private String resolveVariableValue(Project project, String variableName) {
-        // Szukaj w gradle.properties
         for (VirtualFile propFile : FilenameIndex.getVirtualFilesByName("gradle.properties", GlobalSearchScope.projectScope(project))) {
             String content = readFileContent(propFile);
             Matcher m = Pattern.compile("^\\s*" + Pattern.quote(variableName) + "\\s*=\\s*(.*?)\\s*$", Pattern.MULTILINE).matcher(content);
             if (m.find()) return m.group(1);
         }
 
-        // Szukaj w build.gradle (np. ext.version = '1.0' lub set('version', '1.0') lub val version = '1.0')
         for (VirtualFile gradleFile : getGradleFiles(project)) {
             String content = readFileContent(gradleFile);
-            
-            // Standardowe przypisanie: ext.var = '1.0' lub var = "1.0"
             Matcher m1 = Pattern.compile(Pattern.quote(variableName) + "\\s*=\\s*['\"](.*?)['\"]").matcher(content);
             if (m1.find()) return m1.group(1);
 
-            // Funkcja set(): set('var', '1.0')
             Matcher m2 = Pattern.compile("set\\s*\\(\\s*['\"]" + Pattern.quote(variableName) + "['\"]\\s*,\\s*['\"](.*?)['\"]\\s*\\)").matcher(content);
             if (m2.find()) return m2.group(1);
         }
-        return null; // Nie znaleziono wartości
+        return null;
     }
 
     public void updateDependencyVersion(Project project, @NotNull Dependency dependency, @NotNull String newVersion) {
         WriteCommandAction.runWriteCommandAction(project, "Update Gradle Dependency", "DependencyUpdaterPlugin", () -> {
             if (dependency.isVariable()) {
-                // Aktualizujemy zmienną we wszystkich plikach (properties i gradle)
                 updateVariableInFiles(project, dependency.getVariableName(), newVersion);
+                updateTomlVersionRef(project, dependency.getVariableName(), newVersion); // dla Version Catalogs
             } else {
-                // Aktualizujemy twardy ciąg w plikach gradle
                 updateDirectStringInFiles(project, dependency, newVersion);
             }
         });
     }
 
     private void updateVariableInFiles(Project project, String variableName, String newVersion) {
-        // properties
         for (VirtualFile propFile : FilenameIndex.getVirtualFilesByName("gradle.properties", GlobalSearchScope.projectScope(project))) {
-            modifyFile(propFile, content -> {
-                return content.replaceAll(
-                    "(?m)^(\\s*" + Pattern.quote(variableName) + "\\s*=\\s*).*?(\\s*)$",
-                    "$1" + newVersion + "$2"
-                );
-            });
+            modifyFile(propFile, content -> content.replaceAll(
+                "(?m)^(\\s*" + Pattern.quote(variableName) + "\\s*=\\s*).*?(\\s*)$",
+                "$1" + newVersion + "$2"
+            ));
         }
 
-        // gradle
         for (VirtualFile gradleFile : getGradleFiles(project)) {
             modifyFile(gradleFile, content -> {
-                // Przypisanie = 
                 String updated = content.replaceAll(
                     "(" + Pattern.quote(variableName) + "\\s*=\\s*['\"])(.*?)(['\"])",
                     "$1" + newVersion + "$3"
                 );
-                // set()
                 updated = updated.replaceAll(
                     "(set\\s*\\(\\s*['\"]" + Pattern.quote(variableName) + "['\"]\\s*,\\s*['\"])(.*?)(['\"]\\s*\\))",
                     "$1" + newVersion + "$3"
@@ -122,12 +155,29 @@ public class GradleParser {
         }
     }
 
+    private void updateTomlVersionRef(Project project, String versionRef, String newVersion) {
+        for (VirtualFile toml : FilenameIndex.getVirtualFilesByName("libs.versions.toml", GlobalSearchScope.projectScope(project))) {
+            modifyFile(toml, content -> content.replaceAll(
+                "(?m)^(\\s*" + Pattern.quote(versionRef) + "\\s*=\\s*['\"])(.*?)(['\"]\\s*)$",
+                "$1" + newVersion + "$3"
+            ));
+        }
+    }
+
     private void updateDirectStringInFiles(Project project, Dependency dependency, String newVersion) {
         for (VirtualFile gradleFile : getGradleFiles(project)) {
             modifyFile(gradleFile, content -> {
+                // Notacja stringowa
                 String searchTarget = dependency.getGroupId() + ":" + dependency.getArtifactId() + ":" + dependency.getCurrentVersion();
                 String replacement = dependency.getGroupId() + ":" + dependency.getArtifactId() + ":" + newVersion;
-                return content.replace(searchTarget, replacement);
+                String updated = content.replace(searchTarget, replacement);
+                
+                // Notacja mapowa
+                String mapSearchTarget = "group\\s*:\\s*['\"]" + Pattern.quote(dependency.getGroupId()) + "['\"]\\s*,\\s*name\\s*:\\s*['\"]" + Pattern.quote(dependency.getArtifactId()) + "['\"]\\s*,\\s*version\\s*:\\s*['\"]" + Pattern.quote(dependency.getCurrentVersion()) + "['\"]";
+                String mapReplacement = "group: '" + dependency.getGroupId() + "', name: '" + dependency.getArtifactId() + "', version: '" + newVersion + "'";
+                updated = updated.replaceAll(mapSearchTarget, mapReplacement);
+                
+                return updated;
             });
         }
     }

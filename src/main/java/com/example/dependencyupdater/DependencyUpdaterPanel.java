@@ -34,6 +34,7 @@ public class DependencyUpdaterPanel extends JPanel {
     private JButton scanButton;
     private JButton updateButton;
     private JButton selectAllButton;
+    private JButton deselectAllButton;
     private JButton stopButton; // Przycisk czyszczący
 
     public DependencyUpdaterPanel(Project project) {
@@ -57,10 +58,19 @@ public class DependencyUpdaterPanel extends JPanel {
                 if (column == 0) return true; // Zawsze można klikać checkbox
                 if (column == 3) {
                     Object val = getValueAt(row, 3);
-                    // Pole 3 (dropdown) jest wyłączone dla najnowszych paczek lub błędów
-                    if (val instanceof DropdownValue && ((DropdownValue) val).options.isEmpty()) return false;
+                    // Pole 3 (dropdown) jest wyłączone dla najnowszych paczek, braków lub błędów
+                    if (val instanceof DropdownValue) {
+                        DropdownValue dv = (DropdownValue) val;
+                        if (dv.options == null || dv.options.isEmpty() || 
+                            dv.options.get(0).contains("Najnowsza") || 
+                            dv.options.get(0).contains("Brak") || 
+                            dv.options.get(0).contains("Błąd")) {
+                            return false;
+                        }
+                    }
                     return true;
                 }
+                if (column == 1 || column == 4) return true; // Pozwala na wejście w tryb czytania (zaznaczania tekstu)
                 return false;
             }
         };
@@ -87,6 +97,14 @@ public class DependencyUpdaterPanel extends JPanel {
             }
         });
 
+        // Edytor dla kolumn 1 (Biblioteka) i 4 (Bezpieczeństwo) pozwalający na skopiowanie tekstu
+        JTextField readOnlyField = new JTextField();
+        readOnlyField.setEditable(false);
+        readOnlyField.setBorder(null);
+        DefaultCellEditor readOnlyEditor = new DefaultCellEditor(readOnlyField);
+        table.getColumnModel().getColumn(1).setCellEditor(readOnlyEditor);
+        table.getColumnModel().getColumn(4).setCellEditor(readOnlyEditor);
+
         JBScrollPane scrollPane = new JBScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
 
@@ -99,17 +117,20 @@ public class DependencyUpdaterPanel extends JPanel {
         stopButton = new JButton("Wyczyść / Stop"); // Nowy przycisk
         updateButton = new JButton("Zaktualizuj Zaznaczone");
         selectAllButton = new JButton("Zaznacz Wszystkie");
+        deselectAllButton = new JButton("Odznacz Wszystkie");
         ltsOnlyCheckBox = new JCheckBox("Tylko LTS", true);
 
         scanButton.addActionListener(e -> performScan());
         stopButton.addActionListener(e -> stopAndClear());
         updateButton.addActionListener(e -> performUpdate());
         selectAllButton.addActionListener(e -> selectAllRows());
+        deselectAllButton.addActionListener(e -> deselectAllRows());
         ltsOnlyCheckBox.addActionListener(e -> performScan());
 
         leftToolbar.add(scanButton);
         leftToolbar.add(stopButton);
         leftToolbar.add(selectAllButton);
+        leftToolbar.add(deselectAllButton);
         leftToolbar.add(ltsOnlyCheckBox);
         
         rightToolbar.add(updateButton); // Przycisk po prawej
@@ -135,6 +156,13 @@ public class DependencyUpdaterPanel extends JPanel {
                     tableModel.setValueAt(true, i, 0);
                 }
             }
+        }
+        table.repaint();
+    }
+
+    private void deselectAllRows() {
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            tableModel.setValueAt(false, i, 0);
         }
         table.repaint();
     }
@@ -265,17 +293,13 @@ public class DependencyUpdaterPanel extends JPanel {
             String vulnText = "✅ Bezpieczna";
             if (hasVulnerabilities) {
                 List<String> vulns = dep.getVulnerabilities();
-                if (vulns.size() <= 3) {
-                    vulnText = "⚠️ Podatności: " + String.join(", ", vulns);
-                } else {
-                    vulnText = "⚠️ UWAGA: " + vulns.size() + " podatności! (" + String.join(", ", vulns.subList(0, 3)) + "...)";
-                }
+                vulnText = "⚠️ " + vulns.size() + " podatności: " + String.join(", ", vulns);
             }
             
             DropdownValue dropdown = new DropdownValue(dep.getAvailableVersions());
 
             tableModel.addRow(new Object[]{
-                    hasVulnerabilities && dropdown.options != null && !dropdown.options.isEmpty() && !dropdown.options.get(0).contains("Błąd") && !dropdown.options.get(0).contains("Brak"),
+                    false, // Domyślnie wszystkie odznaczone
                     dep.getCoordinates(),
                     dep.getCurrentVersion(),
                     dropdown,
