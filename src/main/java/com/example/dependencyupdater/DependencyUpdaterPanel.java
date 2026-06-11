@@ -45,7 +45,7 @@ public class DependencyUpdaterPanel extends JPanel {
 
     private void initUI() {
         // Tabela
-        String[] columnNames = {"Zaktualizuj?", "Biblioteka", "Obecna Wersja", "Dostępne Wersje", "Bezpieczeństwo"};
+        String[] columnNames = {"Do zmiany", "Biblioteka", "Obecna Wersja", "Dostępne Wersje", "Bezpieczeństwo"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public Class<?> getColumnClass(int columnIndex) {
@@ -55,20 +55,9 @@ public class DependencyUpdaterPanel extends JPanel {
             }
             @Override
             public boolean isCellEditable(int row, int column) {
-                if (column == 0) return true; // Zawsze można klikać checkbox
-                if (column == 3) {
-                    Object val = getValueAt(row, 3);
-                    // Pole 3 (dropdown) jest wyłączone dla najnowszych paczek, braków lub błędów
-                    if (val instanceof DropdownValue) {
-                        DropdownValue dv = (DropdownValue) val;
-                        if (dv.options == null || dv.options.isEmpty() || 
-                            dv.options.get(0).contains("Najnowsza") || 
-                            dv.options.get(0).contains("Brak") || 
-                            dv.options.get(0).contains("Błąd")) {
-                            return false;
-                        }
-                    }
-                    return true;
+                // Jeśli pole 0 to null (oznacza zablokowany update), blokujemy edycję checkboxa i dropdowna
+                if (column == 0 || column == 3) {
+                    return getValueAt(row, 0) != null;
                 }
                 if (column == 1 || column == 4) return true; // Pozwala na wejście w tryb czytania (zaznaczania tekstu)
                 return false;
@@ -77,7 +66,45 @@ public class DependencyUpdaterPanel extends JPanel {
 
         table = new JBTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.getColumnModel().getColumn(0).setMaxWidth(80);
+        table.getColumnModel().getColumn(0).setMaxWidth(110);
+        table.getColumnModel().getColumn(0).setMinWidth(90);
+        table.getColumnModel().getColumn(0).setPreferredWidth(100);
+        
+        // Znikający checkbox (niestandardowy renderer)
+        table.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
+            private final JCheckBox checkBox = new JCheckBox();
+            private final JLabel emptyLabel = new JLabel("");
+
+            {
+                checkBox.setHorizontalAlignment(SwingConstants.CENTER);
+                checkBox.setOpaque(true);
+                emptyLabel.setOpaque(true);
+            }
+
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component compToReturn;
+                
+                // Trójstanowa logika: jeśli value to null, ukrywamy checkbox, co jednocześnie odblokowuje poprawne sortowanie!
+                if (value == null) {
+                    compToReturn = emptyLabel;
+                } else {
+                    checkBox.setSelected((Boolean) value);
+                    compToReturn = checkBox;
+                }
+                
+                // Utrzymanie poprawnego koloru tła np. po zaznaczeniu wiersza
+                if (isSelected) {
+                    compToReturn.setBackground(table.getSelectionBackground());
+                    compToReturn.setForeground(table.getSelectionForeground());
+                } else {
+                    compToReturn.setBackground(table.getBackground());
+                    compToReturn.setForeground(table.getForeground());
+                }
+
+                return compToReturn;
+            }
+        });
         
         // Sortowanie w dwie strony
         table.setAutoCreateRowSorter(true);
@@ -150,11 +177,8 @@ public class DependencyUpdaterPanel extends JPanel {
 
     private void selectAllRows() {
         for (int i = 0; i < tableModel.getRowCount(); i++) {
-            Object val = tableModel.getValueAt(i, 3);
-            if (val instanceof DropdownValue) {
-                if (!((DropdownValue) val).options.isEmpty() && !((DropdownValue) val).options.contains("Błąd połączenia")) {
-                    tableModel.setValueAt(true, i, 0);
-                }
+            if (tableModel.getValueAt(i, 0) != null) {
+                tableModel.setValueAt(true, i, 0);
             }
         }
         table.repaint();
@@ -162,7 +186,9 @@ public class DependencyUpdaterPanel extends JPanel {
 
     private void deselectAllRows() {
         for (int i = 0; i < tableModel.getRowCount(); i++) {
-            tableModel.setValueAt(false, i, 0);
+            if (tableModel.getValueAt(i, 0) != null) {
+                tableModel.setValueAt(false, i, 0);
+            }
         }
         table.repaint();
     }
@@ -297,9 +323,14 @@ public class DependencyUpdaterPanel extends JPanel {
             }
             
             DropdownValue dropdown = new DropdownValue(dep.getAvailableVersions());
+            
+            boolean isUpdatable = dropdown.options != null && !dropdown.options.isEmpty() && 
+                                  !dropdown.options.get(0).contains("Najnowsza") && 
+                                  !dropdown.options.get(0).contains("Brak") && 
+                                  !dropdown.options.get(0).contains("Błąd");
 
             tableModel.addRow(new Object[]{
-                    false, // Domyślnie wszystkie odznaczone
+                    isUpdatable ? false : null, // null używamy by odróżnić zablokowane od odznaczonych przy sortowaniu
                     dep.getCoordinates(),
                     dep.getCurrentVersion(),
                     dropdown,

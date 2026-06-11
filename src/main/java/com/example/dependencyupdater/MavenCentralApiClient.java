@@ -31,7 +31,7 @@ public class MavenCentralApiClient {
                 .thenApply(this::parseVersions);
     }
 
-    private List<String> parseVersions(String jsonBody) {
+    List<String> parseVersions(String jsonBody) {
         List<String> versions = new ArrayList<>();
         try {
             JsonObject jsonObject = JsonParser.parseString(jsonBody).getAsJsonObject();

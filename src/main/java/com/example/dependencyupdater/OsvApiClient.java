@@ -46,8 +46,25 @@ public class OsvApiClient {
                 JsonArray vulnsArray = jsonObject.getAsJsonArray("vulns");
                 for (JsonElement el : vulnsArray) {
                     JsonObject vuln = el.getAsJsonObject();
-                    if (vuln.has("id")) {
-                        vulns.add(vuln.get("id").getAsString());
+                    String bestId = null;
+                    // Szukamy aliasu CVE, bo programiści wolą CVE niż wewnętrzne ID GitHuba (GHSA)
+                    if (vuln.has("aliases")) {
+                        JsonArray aliases = vuln.getAsJsonArray("aliases");
+                        for (JsonElement alias : aliases) {
+                            String aliasStr = alias.getAsString();
+                            if (aliasStr.startsWith("CVE-")) {
+                                bestId = aliasStr;
+                                break;
+                            }
+                        }
+                    }
+                    // Fallback na domyślne ID (np. GHSA) jeśli brak odpowiednika CVE
+                    if (bestId == null && vuln.has("id")) {
+                        bestId = vuln.get("id").getAsString();
+                    }
+                    
+                    if (bestId != null) {
+                        vulns.add(bestId);
                     }
                 }
             }

@@ -16,14 +16,14 @@ import java.util.regex.Pattern;
 public class GradleParser {
 
     // Wyłapuje: 'group:artifact:version' lub "group:artifact:$version"
-    private static final Pattern DEPENDENCY_PATTERN = Pattern.compile("['\"]([a-zA-Z0-9.\\-_]+):([a-zA-Z0-9.\\-_]+):([^'\"]+)['\"]");
+    static final Pattern DEPENDENCY_PATTERN = Pattern.compile("['\"]([a-zA-Z0-9.\\-_]+):([a-zA-Z0-9.\\-_]+):([^'\"]+)['\"]");
     
     // Notacja mapowa: group: 'org', name: 'artifact', version: '1.0' (lub bez cudzysłowów dla zmiennej)
-    private static final Pattern MAP_DEPENDENCY_PATTERN = Pattern.compile("group\\s*:\\s*['\"]([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*name\\s*:\\s*['\"]([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*version\\s*:\\s*([^,\\)\\}\\]\\s]+)");
+    static final Pattern MAP_DEPENDENCY_PATTERN = Pattern.compile("group\\s*:\\s*['\"]([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*name\\s*:\\s*['\"]([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*version\\s*:\\s*([^,\\)\\}\\]\\s]+)");
 
     // TOML (Version Catalogs)
-    private static final Pattern TOML_LIBRARY_REF_PATTERN = Pattern.compile("([a-zA-Z0-9.\\-_]+)\\s*=\\s*\\{\\s*module\\s*=\\s*['\"]([a-zA-Z0-9.\\-_]+):([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*version\\.ref\\s*=\\s*['\"](.*?)['\"]");
-    private static final Pattern TOML_VERSION_PATTERN = Pattern.compile("^\\s*([a-zA-Z0-9.\\-_]+)\\s*=\\s*['\"]([^'\"]+)['\"]", Pattern.MULTILINE);
+    static final Pattern TOML_LIBRARY_REF_PATTERN = Pattern.compile("([a-zA-Z0-9.\\-_]+)\\s*=\\s*\\{\\s*module\\s*=\\s*['\"]([a-zA-Z0-9.\\-_]+):([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*version\\.ref\\s*=\\s*['\"](.*?)['\"]");
+    static final Pattern TOML_VERSION_PATTERN = Pattern.compile("^\\s*([a-zA-Z0-9.\\-_]+)\\s*=\\s*['\"]([^'\"]+)['\"]", Pattern.MULTILINE);
 
     public List<Dependency> extractDependencies(Project project) {
         List<Dependency> dependencies = new ArrayList<>();
