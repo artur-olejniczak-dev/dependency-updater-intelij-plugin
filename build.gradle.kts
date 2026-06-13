@@ -1,5 +1,6 @@
  plugins {
     id("java")
+    id("jacoco")
     id("org.jetbrains.intellij.platform") version "2.2.1"
 }
 
@@ -26,6 +27,9 @@ dependencies {
     }
     
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks {
@@ -35,6 +39,15 @@ tasks {
     }
     test {
         useJUnitPlatform()
+        finalizedBy("jacocoTestReport")
+    }
+    jacocoTestReport {
+        dependsOn(test)
+        reports {
+            csv.required.set(true)
+            xml.required.set(false)
+            html.required.set(true)
+        }
     }
 }
 

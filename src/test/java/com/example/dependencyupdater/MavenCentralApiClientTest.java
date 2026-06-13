@@ -11,32 +11,32 @@ class MavenCentralApiClientTest {
     void testParseVersions() {
         MavenCentralApiClient client = new MavenCentralApiClient();
         
-        String jsonResponse = "{\n" +
-                              "  \"response\": {\n" +
-                              "    \"docs\": [\n" +
-                              "      {\"v\": \"2.0.0\"},\n" +
-                              "      {\"v\": \"1.5.0\"},\n" +
-                              "      {\"v\": \"1.0.0\"}\n" +
-                              "    ]\n" +
-                              "  }\n" +
-                              "}";
+        String xmlResponse = "<metadata>\n" +
+                             "  <versioning>\n" +
+                             "    <versions>\n" +
+                             "      <version>1.0.0</version>\n" +
+                             "      <version>1.5.0</version>\n" +
+                             "      <version>2.0.0</version>\n" +
+                             "    </versions>\n" +
+                             "  </versioning>\n" +
+                             "</metadata>";
 
-        List<String> versions = client.parseVersions(jsonResponse);
+        List<String> versions = client.parseVersions(xmlResponse);
         
         assertEquals(3, versions.size());
-        assertEquals("2.0.0", versions.get(0));
+        assertEquals("1.0.0", versions.get(0));
         assertEquals("1.5.0", versions.get(1));
-        assertEquals("1.0.0", versions.get(2));
+        assertEquals("2.0.0", versions.get(2));
     }
 
     @Test
-    void testParseVersionsWithMalformedJson() {
+    void testParseVersionsWithMalformedXml() {
         MavenCentralApiClient client = new MavenCentralApiClient();
         
-        String badJson = "{ \"malformed\": ";
-        List<String> versions = client.parseVersions(badJson);
+        String badXml = "<versions><version>2.0</vers"; // urwany
+        List<String> versions = client.parseVersions(badXml);
         
-        // Funkcja powinna wyłapać wyjątek i zwrócić bezpiecznie pustą listę zamiast crashować
+        // Z regexem po prostu nie złapie błędnego fragmentu
         assertTrue(versions.isEmpty());
     }
 }

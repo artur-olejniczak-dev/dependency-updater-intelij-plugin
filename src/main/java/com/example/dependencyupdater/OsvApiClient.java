@@ -38,7 +38,7 @@ public class OsvApiClient {
                 .thenApply(this::parseVulnerabilities);
     }
 
-    private List<String> parseVulnerabilities(String jsonBody) {
+    List<String> parseVulnerabilities(String jsonBody) {
         List<String> vulns = new ArrayList<>();
         try {
             JsonObject jsonObject = JsonParser.parseString(jsonBody).getAsJsonObject();

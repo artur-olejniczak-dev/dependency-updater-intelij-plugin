@@ -14,11 +14,16 @@ public class DependencyUpdaterToolWindowFactory implements ToolWindowFactory {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        DependencyUpdaterPanel panel = new DependencyUpdaterPanel(project);
+        DependencyUpdaterPanel directPanel = new DependencyUpdaterPanel(project);
+        TransitiveDependencyPanel transitivePanel = new TransitiveDependencyPanel(project);
 
-        // Rejestracja zawartości w oknie
+        // Rejestracja zakładek w oknie
         ContentFactory contentFactory = ContentFactory.getInstance();
-        Content content = contentFactory.createContent(panel, "", false);
-        toolWindow.getContentManager().addContent(content);
+        
+        Content contentDirect = contentFactory.createContent(directPanel, "Direct Dependencies", false);
+        Content contentTransitive = contentFactory.createContent(transitivePanel, "Transitive Dependencies", false);
+        
+        toolWindow.getContentManager().addContent(contentDirect);
+        toolWindow.getContentManager().addContent(contentTransitive);
     }
 }

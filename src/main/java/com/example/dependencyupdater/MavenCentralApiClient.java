@@ -1,10 +1,5 @@
 package com.example.dependencyupdater;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -18,8 +13,10 @@ public class MavenCentralApiClient {
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     public CompletableFuture<List<String>> fetchAvailableVersions(String groupId, String artifactId) {
-        String url = String.format("https://search.maven.org/solrsearch/select?q=g:%%22%s%%22+AND+a:%%22%s%%22&core=gav&rows=50&wt=json", 
-                                   groupId, artifactId);
+        // Zmiana API z powolnego Solr (limit 50) na bezpośredni XML z pełną historią (500+ wersji dla starych lib)
+        String groupPath = groupId.replace(".", "/");
+        String url = String.format("https://repo1.maven.org/maven2/%s/%s/maven-metadata.xml", 
+                                   groupPath, artifactId);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -31,18 +28,16 @@ public class MavenCentralApiClient {
                 .thenApply(this::parseVersions);
     }
 
-    List<String> parseVersions(String jsonBody) {
+    List<String> parseVersions(String xmlBody) {
         List<String> versions = new ArrayList<>();
+        if (xmlBody == null || xmlBody.isEmpty()) return versions;
+        
         try {
-            JsonObject jsonObject = JsonParser.parseString(jsonBody).getAsJsonObject();
-            JsonObject response = jsonObject.getAsJsonObject("response");
-            JsonArray docs = response.getAsJsonArray("docs");
-
-            for (JsonElement docElement : docs) {
-                JsonObject doc = docElement.getAsJsonObject();
-                if (doc.has("v")) {
-                    versions.add(doc.get("v").getAsString());
-                }
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("<version>(.*?)</version>");
+            java.util.regex.Matcher matcher = pattern.matcher(xmlBody);
+            
+            while (matcher.find()) {
+                versions.add(matcher.group(1));
             }
         } catch (Exception e) {
             e.printStackTrace();

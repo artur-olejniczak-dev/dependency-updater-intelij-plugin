@@ -31,6 +31,7 @@ public class DependencyUpdaterPanel extends JPanel {
     private List<Dependency> currentDependencies = new ArrayList<>();
     
     private JCheckBox ltsOnlyCheckBox;
+    private JCheckBox hideUpToDateCheckBox;
     private JButton scanButton;
     private JButton updateButton;
     private JButton selectAllButton;
@@ -45,7 +46,7 @@ public class DependencyUpdaterPanel extends JPanel {
 
     private void initUI() {
         // Tabela
-        String[] columnNames = {"Do zmiany", "Biblioteka", "Obecna Wersja", "Dostępne Wersje", "Bezpieczeństwo"};
+        String[] columnNames = {"Update", "Library", "Current Version", "Available Versions", "Current Version Vulnerabilities"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public Class<?> getColumnClass(int columnIndex) {
@@ -140,12 +141,13 @@ public class DependencyUpdaterPanel extends JPanel {
         JPanel leftToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JPanel rightToolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         
-        scanButton = new JButton("Skanuj Zależności");
-        stopButton = new JButton("Wyczyść / Stop"); // Nowy przycisk
-        updateButton = new JButton("Zaktualizuj Zaznaczone");
-        selectAllButton = new JButton("Zaznacz Wszystkie");
-        deselectAllButton = new JButton("Odznacz Wszystkie");
-        ltsOnlyCheckBox = new JCheckBox("Tylko LTS", true);
+        scanButton = new JButton("Scan Dependencies");
+        stopButton = new JButton("Clear / Stop");
+        updateButton = new JButton("Update Selected");
+        selectAllButton = new JButton("Select All");
+        deselectAllButton = new JButton("Deselect All");
+        ltsOnlyCheckBox = new JCheckBox("LTS Only", true);
+        hideUpToDateCheckBox = new JCheckBox("Hide Up-to-date", false);
 
         scanButton.addActionListener(e -> performScan());
         stopButton.addActionListener(e -> stopAndClear());
@@ -153,12 +155,17 @@ public class DependencyUpdaterPanel extends JPanel {
         selectAllButton.addActionListener(e -> selectAllRows());
         deselectAllButton.addActionListener(e -> deselectAllRows());
         ltsOnlyCheckBox.addActionListener(e -> performScan());
+        hideUpToDateCheckBox.addActionListener(e -> {
+            tableModel.setRowCount(0);
+            refreshTable();
+        });
 
         leftToolbar.add(scanButton);
         leftToolbar.add(stopButton);
         leftToolbar.add(selectAllButton);
         leftToolbar.add(deselectAllButton);
         leftToolbar.add(ltsOnlyCheckBox);
+        leftToolbar.add(hideUpToDateCheckBox);
         
         rightToolbar.add(updateButton); // Przycisk po prawej
         
@@ -245,7 +252,7 @@ public class DependencyUpdaterPanel extends JPanel {
                     
                     if (versions == null || versions.isEmpty()) {
                         // Obsługa błędu dla tej pojedynczej biblioteki (reszta będzie działać poprawnie)
-                        dep.setAvailableVersions(List.of("Błąd połączenia"));
+                        dep.setAvailableVersions(List.of("Connection Error"));
                         return CompletableFuture.completedFuture(null);
                     }
 
@@ -266,7 +273,7 @@ public class DependencyUpdaterPanel extends JPanel {
                                 if (vulns == null || vulns.isEmpty()) {
                                     return v + tag;
                                 } else {
-                                    return v + tag + " ⚠️ " + vulns.size() + " podatności";
+                                    return v + tag + " ⚠️ " + vulns.size() + " vulnerabilities";
                                 }
                             });
                         versionFutures.add(vf);
@@ -279,19 +286,19 @@ public class DependencyUpdaterPanel extends JPanel {
                             
                             List<String> mappedVersions = versionFutures.stream()
                                     .map(f -> {
-                                        try { return f.get(); } catch (Exception e) { return "Błąd"; }
+                                        try { return f.get(); } catch (Exception e) { return "Error"; }
                                     })
-                                    .filter(val -> !val.equals("Błąd"))
+                                    .filter(val -> !val.equals("Error"))
                                     .collect(Collectors.toList());
                             
                             if (mappedVersions.isEmpty()) {
-                                dep.setAvailableVersions(List.of("Najnowsza mordo :)"));
+                                dep.setAvailableVersions(List.of("Latest version :)"));
                                 return;
                             }
                             
                             if (ltsOnlyCheckBox.isSelected()) {
                                 List<String> ltsOnly = mappedVersions.stream().filter(v -> v.contains("(LTS)")).collect(Collectors.toList());
-                                if (ltsOnly.isEmpty()) ltsOnly = List.of("Brak nowszych wersji LTS");
+                                if (ltsOnly.isEmpty()) ltsOnly = List.of("No newer LTS versions");
                                 dep.setAvailableVersions(ltsOnly);
                             } else {
                                 dep.setAvailableVersions(mappedVersions);
@@ -316,18 +323,23 @@ public class DependencyUpdaterPanel extends JPanel {
     private void refreshTable() {
         for (Dependency dep : currentDependencies) {
             boolean hasVulnerabilities = !dep.getVulnerabilities().isEmpty();
-            String vulnText = "✅ Bezpieczna";
+            String vulnText = "✅ Secure";
             if (hasVulnerabilities) {
                 List<String> vulns = dep.getVulnerabilities();
-                vulnText = "⚠️ " + vulns.size() + " podatności: " + String.join(", ", vulns);
+                vulnText = "⚠️ " + vulns.size() + " vulnerabilities: " + String.join(", ", vulns);
             }
             
             DropdownValue dropdown = new DropdownValue(dep.getAvailableVersions());
             
             boolean isUpdatable = dropdown.options != null && !dropdown.options.isEmpty() && 
-                                  !dropdown.options.get(0).contains("Najnowsza") && 
-                                  !dropdown.options.get(0).contains("Brak") && 
-                                  !dropdown.options.get(0).contains("Błąd");
+                                  !dropdown.options.get(0).contains("Latest") && 
+                                  !dropdown.options.get(0).contains("No newer") && 
+                                  !dropdown.options.get(0).contains("Error") && 
+                                  !dropdown.options.get(0).contains("Connection");
+
+            if (hideUpToDateCheckBox.isSelected() && !isUpdatable) {
+                continue; // Pomija renderowanie tego wiersza
+            }
 
             tableModel.addRow(new Object[]{
                     isUpdatable ? false : null, // null używamy by odróżnić zablokowane od odznaczonych przy sortowaniu
@@ -351,7 +363,7 @@ public class DependencyUpdaterPanel extends JPanel {
                 DropdownValue dropdown = (DropdownValue) tableModel.getValueAt(i, 3);
                 String newVersionWithTag = dropdown.selected;
                 
-                if (newVersionWithTag.equals("Najnowsza mordo :)") || newVersionWithTag.contains("Brak nowszych") || newVersionWithTag.contains("Błąd")) continue; 
+                if (newVersionWithTag.equals("Latest version :)") || newVersionWithTag.contains("No newer") || newVersionWithTag.contains("Error") || newVersionWithTag.contains("Connection")) continue; 
                 
                 // Usuwamy z tekstu "(LTS)" i spajające spacje, żeby przekazać czysty numer wersji
                 String newVersion = newVersionWithTag.split(" ")[0];
@@ -378,18 +390,18 @@ public class DependencyUpdaterPanel extends JPanel {
                         project, com.intellij.openapi.externalSystem.model.ProjectSystemId.IDE
                     )
                 );
-                JOptionPane.showMessageDialog(this, "Zaktualizowano pliki Gradle. Może być konieczne kliknięcie 'Load Gradle Changes' w IDE.");
+                JOptionPane.showMessageDialog(this, "Gradle files updated. You may need to click 'Load Gradle Changes' in the IDE.");
             } else {
                 MavenProjectsManager.getInstance(project).forceUpdateAllProjectsOrFindAllAvailablePomFiles();
-                JOptionPane.showMessageDialog(this, "Zaktualizowano pliki pom.xml i rozpoczęto przeładowanie Mavena.");
+                JOptionPane.showMessageDialog(this, "pom.xml files updated. Maven reload started.");
             }
             performScan(); 
         } else {
-            JOptionPane.showMessageDialog(this, "Nie zaznaczono żadnych bibliotek wymagających aktualizacji.");
+            JOptionPane.showMessageDialog(this, "No libraries selected for update.");
         }
     }
 
-    private int compareVersions(String v1, String v2) {
+    int compareVersions(String v1, String v2) {
         String[] p1 = v1.split("[.\\-]");
         String[] p2 = v2.split("[.\\-]");
         int len = Math.max(p1.length, p2.length);
@@ -402,7 +414,7 @@ public class DependencyUpdaterPanel extends JPanel {
         return 0;
     }
 
-    private int parseInt(String str) {
+    int parseInt(String str) {
         try {
             return Integer.parseInt(str.replaceAll("[^0-9]", ""));
         } catch (Exception e) {
@@ -410,7 +422,7 @@ public class DependencyUpdaterPanel extends JPanel {
         }
     }
 
-    private static class DropdownValue implements Comparable<DropdownValue> {
+    static class DropdownValue implements Comparable<DropdownValue> {
         List<String> options;
         String selected;
 
@@ -419,7 +431,7 @@ public class DependencyUpdaterPanel extends JPanel {
             if (options != null && !options.isEmpty()) {
                 this.selected = options.get(0);
             } else {
-                this.selected = "Najnowsza mordo :)"; 
+                this.selected = "Latest version :)"; 
             }
         }
 
@@ -440,7 +452,7 @@ public class DependencyUpdaterPanel extends JPanel {
             if (value instanceof DropdownValue) {
                 currentValue = (DropdownValue) value;
                 if (currentValue.options == null || currentValue.options.isEmpty()) {
-                    comboBox.addItem("Najnowsza mordo :)");
+                    comboBox.addItem("Latest version :)");
                 } else {
                     for (String opt : currentValue.options) {
                         comboBox.addItem(opt);
