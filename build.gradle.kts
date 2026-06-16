@@ -1,11 +1,11 @@
- plugins {
+plugins {
     id("java")
     id("jacoco")
-    id("org.jetbrains.intellij.platform") version "2.2.1"
+    id("org.jetbrains.intellij.platform") version "2.16.0"
 }
 
 group = "com.example.dependencyupdater"
-version = "1.0-SNAPSHOT"
+version = "1.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -18,17 +18,17 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
 
     intellijPlatform {
-        intellijIdeaCommunity("2025.1") // Kompilacja pod SDK 2025.1 (będzie działać na Twoim 2025.3.3)
+        intellijIdea("2026.1.3")
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.jetbrains.idea.maven")
         bundledPlugin("org.jetbrains.plugins.gradle")
         
         pluginVerifier()
     }
-    
+
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
-    testImplementation("org.mockito:mockito-core:5.11.0")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
+    testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.14.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -39,6 +39,7 @@ tasks {
     }
     test {
         useJUnitPlatform()
+        jvmArgs("-Dnet.bytebuddy.experimental=true")
         finalizedBy("jacocoTestReport")
     }
     jacocoTestReport {
@@ -56,7 +57,7 @@ intellijPlatform {
         version.set("1.0")
         ideaVersion {
             sinceBuild.set("251")
-            untilBuild.set("253.*")
+            untilBuild.set("262.*")
         }
     }
 }
