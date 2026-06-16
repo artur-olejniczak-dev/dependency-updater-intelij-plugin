@@ -54,7 +54,7 @@ tasks {
 
 intellijPlatform {
     pluginConfiguration {
-        version.set("1.0")
+        version.set("1.1")
         ideaVersion {
             sinceBuild.set("251")
             untilBuild.set("262.*")

@@ -17,6 +17,9 @@
 
     <!-- Extension declarations (Tool windows, actions, services) -->
     <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.example.dependencyupdater.settings.DependencyUpdaterSettingsState"/>
+        <applicationConfigurable parentId="tools" instance="com.example.dependencyupdater.settings.DependencyUpdaterSettingsConfigurable" id="com.example.dependencyupdater.settings.DependencyUpdaterSettingsConfigurable" displayName="Dependency Updater"/>
+        
         <!-- Registering our Tool Window -->
         <toolWindow id="Dependency Updater" 
                     secondary="true" 
