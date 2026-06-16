@@ -15,7 +15,7 @@ public class TransitiveDependencyResolver {
     private static final Pattern GRADLE_CACHE_PATTERN = Pattern.compile("files-2\\.1[\\\\/]([^\\\\/]+)[\\\\/]([^\\\\/]+)[\\\\/]([^\\\\/]+)");
 
     public List<Dependency> extractTransitiveDependencies(Project project, List<Dependency> directDependencies) {
-        // Magia API IntelliJ: Zwraca absolutnie wszystkie biblioteki, jakie Gradle zarejestrował w projekcie (zbudowany graf)
+        // IntelliJ API Magic: Returns absolutely all libraries registered by Gradle in the project (the built graph)
         VirtualFile[] files = OrderEnumerator.orderEntries(project)
                 .withoutSdk()
                 .librariesOnly()

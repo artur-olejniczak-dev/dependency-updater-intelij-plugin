@@ -24,7 +24,7 @@ public class DependencyUpdaterPanel extends JPanel {
     private final OsvApiClient osvApi = new OsvApiClient();
 
     private boolean isGradleProject = false;
-    private volatile int currentScanId = 0; // Unikalny ID skanowania służący do anulowania/stopu
+    private volatile int currentScanId = 0; // Unique scan ID used for cancellation/stopping background tasks
 
     private JBTable table;
     private DefaultTableModel tableModel;
@@ -36,7 +36,7 @@ public class DependencyUpdaterPanel extends JPanel {
     private JButton updateButton;
     private JButton selectAllButton;
     private JButton deselectAllButton;
-    private JButton stopButton; // Przycisk czyszczący
+    private JButton stopButton; // Clear/Stop button
 
     public DependencyUpdaterPanel(Project project) {
         super(new BorderLayout());
@@ -45,7 +45,7 @@ public class DependencyUpdaterPanel extends JPanel {
     }
 
     private void initUI() {
-        // Tabela
+        // Table structure
         String[] columnNames = {"Update", "Library", "Current Version", "Available Versions", "Current Version Vulnerabilities"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -56,11 +56,11 @@ public class DependencyUpdaterPanel extends JPanel {
             }
             @Override
             public boolean isCellEditable(int row, int column) {
-                // Jeśli pole 0 to null (oznacza zablokowany update), blokujemy edycję checkboxa i dropdowna
+                // If column 0 is null (update disabled), block checkbox and dropdown editing
                 if (column == 0 || column == 3) {
                     return getValueAt(row, 0) != null;
                 }
-                if (column == 1 || column == 4) return true; // Pozwala na wejście w tryb czytania (zaznaczania tekstu)
+                if (column == 1 || column == 4) return true; // Allows entering read mode (text selection)
                 return false;
             }
         };
@@ -71,7 +71,7 @@ public class DependencyUpdaterPanel extends JPanel {
         table.getColumnModel().getColumn(0).setMinWidth(90);
         table.getColumnModel().getColumn(0).setPreferredWidth(100);
         
-        // Znikający checkbox (niestandardowy renderer)
+        // Disappearing checkbox (custom renderer)
         table.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
             private final JCheckBox checkBox = new JCheckBox();
             private final JLabel emptyLabel = new JLabel("");
@@ -86,7 +86,7 @@ public class DependencyUpdaterPanel extends JPanel {
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component compToReturn;
                 
-                // Trójstanowa logika: jeśli value to null, ukrywamy checkbox, co jednocześnie odblokowuje poprawne sortowanie!
+                // Tri-state logic: if value is null, hide the checkbox, which also enables correct sorting!
                 if (value == null) {
                     compToReturn = emptyLabel;
                 } else {
@@ -94,7 +94,7 @@ public class DependencyUpdaterPanel extends JPanel {
                     compToReturn = checkBox;
                 }
                 
-                // Utrzymanie poprawnego koloru tła np. po zaznaczeniu wiersza
+                // Maintain correct background color (e.g. after row selection)
                 if (isSelected) {
                     compToReturn.setBackground(table.getSelectionBackground());
                     compToReturn.setForeground(table.getSelectionForeground());
@@ -107,12 +107,12 @@ public class DependencyUpdaterPanel extends JPanel {
             }
         });
         
-        // Sortowanie w dwie strony
+        // Two-way sorting
         table.setAutoCreateRowSorter(true);
-        // Pogrubienie nagłówków
+        // Bold headers
         table.getTableHeader().setFont(table.getTableHeader().getFont().deriveFont(Font.BOLD));
 
-        // Niestandardowy edytor dla JComboBox w kolumnie 3
+        // Custom editor for JComboBox in column 3
         table.getColumnModel().getColumn(3).setCellEditor(new ComboBoxCellEditor());
         table.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
@@ -125,7 +125,7 @@ public class DependencyUpdaterPanel extends JPanel {
             }
         });
 
-        // Edytor dla kolumn 1 (Biblioteka) i 4 (Bezpieczeństwo) pozwalający na skopiowanie tekstu
+        // Editor for columns 1 (Library) and 4 (Security) allowing text copy
         JTextField readOnlyField = new JTextField();
         readOnlyField.setEditable(false);
         readOnlyField.setBorder(null);
@@ -136,7 +136,7 @@ public class DependencyUpdaterPanel extends JPanel {
         JBScrollPane scrollPane = new JBScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Toolbar podzielony na lewą i prawą stronę
+        // Toolbar split into left and right sides
         JPanel topPanel = new JPanel(new BorderLayout());
         JPanel leftToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JPanel rightToolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -167,7 +167,7 @@ public class DependencyUpdaterPanel extends JPanel {
         leftToolbar.add(ltsOnlyCheckBox);
         leftToolbar.add(hideUpToDateCheckBox);
         
-        rightToolbar.add(updateButton); // Przycisk po prawej
+        rightToolbar.add(updateButton); // Button on the right
         
         topPanel.add(leftToolbar, BorderLayout.WEST);
         topPanel.add(rightToolbar, BorderLayout.EAST);
@@ -176,7 +176,7 @@ public class DependencyUpdaterPanel extends JPanel {
     }
     
     private void stopAndClear() {
-        currentScanId++; // Unieważnia wszelkie trwające w tle zapytania!
+        currentScanId++; // Invalidates any ongoing background requests!
         tableModel.setRowCount(0);
         currentDependencies.clear();
         scanButton.setEnabled(true);
@@ -205,10 +205,10 @@ public class DependencyUpdaterPanel extends JPanel {
         scanButton.setEnabled(false);
         tableModel.setRowCount(0);
 
-        // Wyciąganie plików używa indeksów w IntelliJ 2025+, a to rzuca błędem jeśli odpalimy to w głównym wątku graficznym (EDT).
+        // Extracting files uses indexes in IntelliJ 2025+, which throws an error if run on the Event Dispatch Thread (EDT).
         com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(() -> {
             com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction(() -> {
-                if (myScanId != currentScanId) return; // Przerwano!
+                if (myScanId != currentScanId) return; // Interrupted!
                 
                 List<Dependency> extracted = pomParser.extractDependencies(project);
                 boolean isGradle = false;
@@ -224,7 +224,7 @@ public class DependencyUpdaterPanel extends JPanel {
                 final boolean finalIsGradle = isGradle;
 
                 SwingUtilities.invokeLater(() -> {
-                    if (myScanId != currentScanId) return; // Przerwano!
+                    if (myScanId != currentScanId) return; // Interrupted!
                     currentDependencies = finalExtracted;
                     isGradleProject = finalIsGradle;
                     startApiQueries(myScanId);
@@ -238,7 +238,7 @@ public class DependencyUpdaterPanel extends JPanel {
 
         for (Dependency dep : currentDependencies) {
             CompletableFuture<Void> osvFuture = osvApi.checkVulnerabilities(dep.getGroupId(), dep.getArtifactId(), dep.getCurrentVersion())
-                .exceptionally(ex -> new ArrayList<>()) // Jeśli OSV zawiedzie, zwracamy pustą listę
+                .exceptionally(ex -> new ArrayList<>()) // If OSV fails, return an empty list
                 .thenAccept(vulns -> {
                     if (myScanId == currentScanId) {
                         dep.setVulnerabilities(vulns);
@@ -246,28 +246,28 @@ public class DependencyUpdaterPanel extends JPanel {
                 });
             
             CompletableFuture<Void> mavenFuture = mavenApi.fetchAvailableVersions(dep.getGroupId(), dep.getArtifactId())
-                .exceptionally(ex -> new ArrayList<>()) // Jeśli główny strzał po wersje padnie, nie blokujemy tabeli!
+                .exceptionally(ex -> new ArrayList<>()) // If the main fetch for versions fails, don't block the table!
                 .thenCompose(versions -> {
                     if (myScanId != currentScanId) return CompletableFuture.completedFuture(null);
                     
                     if (versions == null || versions.isEmpty()) {
-                        // Obsługa błędu dla tej pojedynczej biblioteki (reszta będzie działać poprawnie)
+                        // Error handling for this single library (the rest will continue working)
                         dep.setAvailableVersions(List.of("Connection Error"));
                         return CompletableFuture.completedFuture(null);
                     }
 
-                    // Filtrujemy wyższe wersje, SORTUJEMY OD NAJWYŻSZEJ, a następnie OGRANICZAMY do 10
+                    // Filter higher versions, SORT DESCENDING, and then LIMIT to 10
                     List<String> higherVersions = versions.stream()
                             .filter(v -> compareVersions(v, dep.getCurrentVersion()) > 0)
-                            .sorted((v1, v2) -> compareVersions(v2, v1)) // Sortowanie malejąco
+                            .sorted((v1, v2) -> compareVersions(v2, v1)) // Sort descending
                             .limit(10)
                             .collect(Collectors.toList());
 
-                    // Dla każdej wyższej wersji robimy asynchroniczny test podatności, zabezpieczając go przed wyjątkiem
+                    // For each higher version perform an async vulnerability check, protected against exceptions
                     List<CompletableFuture<String>> versionFutures = new ArrayList<>();
                     for (String v : higherVersions) {
                         CompletableFuture<String> vf = osvApi.checkVulnerabilities(dep.getGroupId(), dep.getArtifactId(), v)
-                            .exceptionally(ex -> new ArrayList<>()) // Zabezpieczenie przed błędem 429/timeoutem!
+                            .exceptionally(ex -> new ArrayList<>()) // Protection against 429/timeout errors!
                             .thenApply(vulns -> {
                                 String tag = VersionUtils.isStableVersion(v) ? " (LTS)" : " (BETA)";
                                 if (vulns == null || vulns.isEmpty()) {
@@ -280,9 +280,9 @@ public class DependencyUpdaterPanel extends JPanel {
                     }
 
                     return CompletableFuture.allOf(versionFutures.toArray(new CompletableFuture[0]))
-                        .exceptionally(ex -> null) // Ochrona całej grupy zapytań
+                        .exceptionally(ex -> null) // Protect the entire group of queries
                         .thenAccept(vVoid -> {
-                            if (myScanId != currentScanId) return; // Przerwano
+                            if (myScanId != currentScanId) return; // Interrupted
                             
                             List<String> mappedVersions = versionFutures.stream()
                                     .map(f -> {
@@ -310,7 +310,7 @@ public class DependencyUpdaterPanel extends JPanel {
             futures.add(mavenFuture);
         }
 
-        // Czekamy na wszystko. Niezależnie od błędów poszczególnych komponentów, wymuszamy odświeżenie interfejsu (exceptionally zwraca null omijając zawieszenie)
+        // Wait for all futures. Regardless of individual component errors, force UI refresh (exceptionally returns null bypassing hangs)
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
             .exceptionally(ex -> null)
             .thenRun(() -> SwingUtilities.invokeLater(() -> {
@@ -338,11 +338,11 @@ public class DependencyUpdaterPanel extends JPanel {
                                   !dropdown.options.get(0).contains("Connection");
 
             if (hideUpToDateCheckBox.isSelected() && !isUpdatable) {
-                continue; // Pomija renderowanie tego wiersza
+                continue; // Skip rendering this row
             }
 
             tableModel.addRow(new Object[]{
-                    isUpdatable ? false : null, // null używamy by odróżnić zablokowane od odznaczonych przy sortowaniu
+                    isUpdatable ? false : null, // null used to differentiate blocked from unchecked when sorting
                     dep.getCoordinates(),
                     dep.getCurrentVersion(),
                     dropdown,
@@ -365,7 +365,7 @@ public class DependencyUpdaterPanel extends JPanel {
                 
                 if (newVersionWithTag.equals("Latest version :)") || newVersionWithTag.contains("No newer") || newVersionWithTag.contains("Error") || newVersionWithTag.contains("Connection")) continue; 
                 
-                // Usuwamy z tekstu "(LTS)" i spajające spacje, żeby przekazać czysty numer wersji
+                // Remove "(LTS)" and connecting spaces from text to extract clean version number
                 String newVersion = newVersionWithTag.split(" ")[0];
                 
                 Dependency targetDep = currentDependencies.stream()

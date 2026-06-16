@@ -27,10 +27,10 @@ public class PomParser {
                 XmlFile xmlFile = (XmlFile) psiFile;
                 XmlTag rootTag = xmlFile.getRootTag();
                 if (rootTag != null) {
-                    // 1. Zwykłe zależności
+                    // 1. Regular dependencies
                     extractFromDependenciesTag(rootTag.findFirstSubTag("dependencies"), dependencies, xmlFile);
                     
-                    // 2. Zarządzanie zależnościami (dependencyManagement)
+                    // 2. Dependency management
                     XmlTag depMgmtTag = rootTag.findFirstSubTag("dependencyManagement");
                     if (depMgmtTag != null) {
                         extractFromDependenciesTag(depMgmtTag.findFirstSubTag("dependencies"), dependencies, xmlFile);
@@ -50,7 +50,7 @@ public class PomParser {
             String versionRaw = getSubTagText(depTag, "version");
 
             if (groupId != null && artifactId != null && versionRaw != null) {
-                // Rozpoznawanie zmiennych, np. ${spring.version}
+                // Resolve variables, e.g. ${spring.version}
                 if (versionRaw.startsWith("${") && versionRaw.endsWith("}")) {
                     String propName = versionRaw.substring(2, versionRaw.length() - 1);
                     String resolvedVersion = resolveProperty(xmlFile, propName);
@@ -61,7 +61,7 @@ public class PomParser {
                         dep.setVariableName(propName);
                         dependencies.add(dep);
                     }
-                } else if (!versionRaw.startsWith("$")) { // Zwykły ciąg tekstowy, a nie inna nieobsługiwana zmienna
+                } else if (!versionRaw.startsWith("$")) { // Regular text string, not another unsupported variable
                     dependencies.add(new Dependency(groupId, artifactId, versionRaw));
                 }
             }
@@ -94,10 +94,10 @@ public class PomParser {
                     XmlFile xmlFile = (XmlFile) psiFile;
                     
                     if (dependency.isVariable()) {
-                        // Aktualizacja w bloku <properties>
+                        // Update in the <properties> block
                         updatePropertyTag(xmlFile, dependency.getVariableName(), newVersion);
                     } else {
-                        // Aktualizacja twardo w bloku <dependency>
+                        // Hard update in the <dependency> block
                         updateDependencyTag(xmlFile, dependency, newVersion);
                     }
                 }

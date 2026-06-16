@@ -19,7 +19,7 @@ class TransitiveDependencyPanelTest {
         assertTrue(panel.compareVersions("3.0", "3.0.0") == 0); 
         assertTrue(panel.compareVersions("1.2.3", "1.2.4") < 0);
         
-        // Zabezpieczenie przed tekstem (często w Gradle cache jest np. nazwa w ścieżce)
+        // Protection against text suffixes (often found in Gradle cache paths)
         assertTrue(panel.compareVersions("2.0.0-rc1", "1.9.9") > 0);
     }
 

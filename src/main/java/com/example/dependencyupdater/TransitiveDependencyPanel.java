@@ -70,7 +70,7 @@ public class TransitiveDependencyPanel extends JPanel {
             }
         });
 
-        // Pozwala na kopiowanie tekstu z kolumn
+        // Allow text copying from columns
         JTextField readOnlyField = new JTextField();
         readOnlyField.setEditable(false);
         readOnlyField.setBorder(null);
@@ -144,20 +144,20 @@ public class TransitiveDependencyPanel extends JPanel {
             futures.add(osvFuture);
         }
 
-        // 1. Zakończ skanowanie podstawowych luki (OSV)
+        // 1. Wait for basic vulnerability scanning to finish (OSV)
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
             .exceptionally(ex -> null)
             .thenRun(() -> {
                 if (myScanId != currentScanId) return;
                 
-                // 2. Filtruj TYLKO paczki podatne! (Zgodnie z życzeniem)
+                // 2. Filter ONLY vulnerable packages! (As requested)
                 List<Dependency> vulnerableDeps = currentTransitiveDependencies.stream()
                         .filter(d -> !d.getVulnerabilities().isEmpty())
                         .collect(Collectors.toList());
                 
-                currentTransitiveDependencies = vulnerableDeps; // Nadpisz listę, żeby nie przetwarzać bezpiecznych
+                currentTransitiveDependencies = vulnerableDeps; // Overwrite list to avoid processing safe packages
                 
-                // 3. Dopiero teraz odpytaj Mavena o nowe wersje dla podatnych paczek
+                // 3. Now query Maven for newer versions of vulnerable packages
                 fetchAvailableVersionsForVulnerable(myScanId);
             });
     }

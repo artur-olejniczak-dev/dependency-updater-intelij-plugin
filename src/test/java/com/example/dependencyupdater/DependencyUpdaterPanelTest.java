@@ -17,10 +17,10 @@ class DependencyUpdaterPanelTest {
 
         assertTrue(panel.compareVersions("5.3.10", "5.3.9") > 0);
         assertTrue(panel.compareVersions("6.0.0", "5.9.9") > 0);
-        assertTrue(panel.compareVersions("2.1", "2.1.0") == 0); // 2.1 vs 2.1.0 to to samo
+        assertTrue(panel.compareVersions("2.1", "2.1.0") == 0); // 2.1 vs 2.1.0 are the same
         assertTrue(panel.compareVersions("1.0.0", "1.0.1") < 0);
         
-        // Z przyrostkami tekstowymi (Release, itp)
+        // With textual suffixes (Release, etc)
         assertTrue(panel.compareVersions("3.0.0-RELEASE", "2.9.9") > 0);
         assertTrue(panel.compareVersions("2.1.0-M1", "2.1.0") > 0); 
     }
@@ -32,7 +32,7 @@ class DependencyUpdaterPanelTest {
 
         assertEquals(5, panel.parseInt("5"));
         assertEquals(10, panel.parseInt("10-RELEASE"));
-        assertEquals(0, panel.parseInt("abc")); // Fallback na 0 w razie błędu
+        assertEquals(0, panel.parseInt("abc")); // Fallback to 0 on error
     }
 
     @Test

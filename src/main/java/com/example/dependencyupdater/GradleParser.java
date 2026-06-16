@@ -15,10 +15,10 @@ import java.util.regex.Pattern;
 
 public class GradleParser {
 
-    // Wyłapuje: 'group:artifact:version' lub "group:artifact:$version"
+    // Captures: 'group:artifact:version' or "group:artifact:$version"
     static final Pattern DEPENDENCY_PATTERN = Pattern.compile("['\"]([a-zA-Z0-9.\\-_]+):([a-zA-Z0-9.\\-_]+):([^'\"]+)['\"]");
     
-    // Notacja mapowa: group: 'org', name: 'artifact', version: '1.0' (lub bez cudzysłowów dla zmiennej)
+    // Map notation: group: 'org', name: 'artifact', version: '1.0' (or without quotes for variables)
     static final Pattern MAP_DEPENDENCY_PATTERN = Pattern.compile("group\\s*:\\s*['\"]([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*name\\s*:\\s*['\"]([a-zA-Z0-9.\\-_]+)['\"]\\s*,\\s*version\\s*:\\s*([^,\\)\\}\\]\\s]+)");
 
     // TOML (Version Catalogs)
@@ -32,21 +32,21 @@ public class GradleParser {
         for (VirtualFile file : gradleFiles) {
             String content = readFileContent(file);
             
-            // 1. Zwykła notacja 'g:a:v'
+            // 1. Regular string notation 'g:a:v'
             Matcher matcher = DEPENDENCY_PATTERN.matcher(content);
             while (matcher.find()) {
                 handleMatchedVersion(matcher.group(1), matcher.group(2), matcher.group(3), project, dependencies);
             }
 
-            // 2. Notacja mapowa group: '', name: '', version: ''
+            // 2. Map notation group: '', name: '', version: ''
             Matcher mapMatcher = MAP_DEPENDENCY_PATTERN.matcher(content);
             while (mapMatcher.find()) {
                 String versionRaw = mapMatcher.group(3).trim();
-                // Oczyszczamy z ewentualnych cudzysłowów
+                // Clean up quotes if present
                 if (versionRaw.startsWith("'") || versionRaw.startsWith("\"")) {
                     versionRaw = versionRaw.replaceAll("['\"]", "");
                 } else {
-                    // Jeśli to czysty tekst bez cudzysłowów to w Gradle jest to ZMIENNA
+                    // If it's pure text without quotes, in Gradle it's considered a VARIABLE
                     if (!versionRaw.startsWith("$")) versionRaw = "$" + versionRaw; 
                 }
                 handleMatchedVersion(mapMatcher.group(1), mapMatcher.group(2), versionRaw, project, dependencies);
@@ -79,14 +79,14 @@ public class GradleParser {
         for (VirtualFile toml : tomlFiles) {
             String content = readFileContent(toml);
             
-            // Najpierw zmapujmy wszystkie wersje
+            // Map all versions first
             Map<String, String> versionsMap = new HashMap<>();
             Matcher versionMatcher = TOML_VERSION_PATTERN.matcher(content);
             while (versionMatcher.find()) {
                 versionsMap.put(versionMatcher.group(1), versionMatcher.group(2));
             }
 
-            // Teraz szukamy bibliotek
+            // Now search for libraries
             Matcher libMatcher = TOML_LIBRARY_REF_PATTERN.matcher(content);
             while (libMatcher.find()) {
                 String groupId = libMatcher.group(2);
@@ -96,7 +96,7 @@ public class GradleParser {
                 if (versionsMap.containsKey(versionRef)) {
                     Dependency dep = new Dependency(groupId, artifactId, versionsMap.get(versionRef));
                     dep.setVariable(true);
-                    dep.setVariableName(versionRef); // Traktujemy toml version.ref jako naszą "zmienną"
+                    dep.setVariableName(versionRef); // Treat toml version.ref as our "variable"
                     dependencies.add(dep);
                 }
             }
@@ -125,7 +125,7 @@ public class GradleParser {
         WriteCommandAction.runWriteCommandAction(project, "Update Gradle Dependency", "DependencyUpdaterPlugin", () -> {
             if (dependency.isVariable()) {
                 updateVariableInFiles(project, dependency.getVariableName(), newVersion);
-                updateTomlVersionRef(project, dependency.getVariableName(), newVersion); // dla Version Catalogs
+                updateTomlVersionRef(project, dependency.getVariableName(), newVersion); // for Version Catalogs
             } else {
                 updateDirectStringInFiles(project, dependency, newVersion);
             }
@@ -167,12 +167,12 @@ public class GradleParser {
     private void updateDirectStringInFiles(Project project, Dependency dependency, String newVersion) {
         for (VirtualFile gradleFile : getGradleFiles(project)) {
             modifyFile(gradleFile, content -> {
-                // Notacja stringowa
+                // String notation
                 String searchTarget = dependency.getGroupId() + ":" + dependency.getArtifactId() + ":" + dependency.getCurrentVersion();
                 String replacement = dependency.getGroupId() + ":" + dependency.getArtifactId() + ":" + newVersion;
                 String updated = content.replace(searchTarget, replacement);
                 
-                // Notacja mapowa
+                // Map notation
                 String mapSearchTarget = "group\\s*:\\s*['\"]" + Pattern.quote(dependency.getGroupId()) + "['\"]\\s*,\\s*name\\s*:\\s*['\"]" + Pattern.quote(dependency.getArtifactId()) + "['\"]\\s*,\\s*version\\s*:\\s*['\"]" + Pattern.quote(dependency.getCurrentVersion()) + "['\"]";
                 String mapReplacement = "group: '" + dependency.getGroupId() + "', name: '" + dependency.getArtifactId() + "', version: '" + newVersion + "'";
                 updated = updated.replaceAll(mapSearchTarget, mapReplacement);

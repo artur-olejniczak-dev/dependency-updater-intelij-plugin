@@ -53,7 +53,7 @@ class DependencyUpdaterToolWindowFactoryTest {
             DependencyUpdaterToolWindowFactory factory = new DependencyUpdaterToolWindowFactory();
             factory.createToolWindowContent(mockProject, mockToolWindow);
 
-            // Weryfikacja czy zakładki zostały poprawnie utworzone i dodane
+            // Verify that tabs were correctly created and added
             verify(mockContentManager, times(1)).addContent(mockContentDirect);
             verify(mockContentManager, times(1)).addContent(mockContentTransitive);
         }
