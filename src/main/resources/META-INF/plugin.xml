@@ -1,7 +1,7 @@
 <idea-plugin>
-    <id>com.example.dependencyupdater</id>
+    <id>pl.artoledev.dependencyupdater</id>
     <name>DependencyUpdater</name>
-    <vendor email="support@example.com" url="http://www.example.com">Przykladowy Autor</vendor>
+    <vendor email="artur.olejniczak.dev@gmail.com" > Artur Olejniczak</vendor>
 
     <description><![CDATA[
       An IntelliJ IDEA plugin for managing dependencies and identifying security vulnerabilities.

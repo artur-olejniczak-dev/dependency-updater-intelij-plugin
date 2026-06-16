@@ -56,7 +56,7 @@ intellijPlatform {
         version.set("1.0")
         ideaVersion {
             sinceBuild.set("251")
-            untilBuild.set("254.*")
+            untilBuild.set("253.*")
         }
     }
 }
