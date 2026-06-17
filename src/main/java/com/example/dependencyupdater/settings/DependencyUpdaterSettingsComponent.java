@@ -33,6 +33,9 @@ public class DependencyUpdaterSettingsComponent {
     private final JBTextField usernameField = new JBTextField();
     private final JBPasswordField passwordField = new JBPasswordField();
 
+    private final JLabel usernameLabel = new JLabel("Username:");
+    private final JLabel passwordLabel = new JLabel("Password / Token:");
+
     private JPanel detailsPanel;
     private boolean isUpdatingFields = false;
 
@@ -82,19 +85,24 @@ public class DependencyUpdaterSettingsComponent {
                 .addLabeledComponent("Name:", nameField)
                 .addLabeledComponent("URL:", urlField)
                 .addLabeledComponent("Auth Type:", authTypeComboBox)
-                .addLabeledComponent("Username:", usernameField)
-                .addLabeledComponent("Password / Token:", passwordField)
+                .addLabeledComponent(usernameLabel, usernameField)
+                .addLabeledComponent(passwordLabel, passwordField)
                 .addComponentFillVertically(new JPanel(), 0)
                 .getPanel();
     }
 
     private void updateAuthFieldsVisibility() {
         Repository.AuthType type = (Repository.AuthType) authTypeComboBox.getSelectedItem();
+        if (type == null) type = Repository.AuthType.NONE;
+
         boolean isBasic = type == Repository.AuthType.BASIC;
         boolean isBearer = type == Repository.AuthType.BEARER;
         
-        usernameField.setEnabled(isBasic);
-        passwordField.setEnabled(isBasic || isBearer);
+        usernameField.setVisible(isBasic);
+        usernameLabel.setVisible(isBasic);
+        
+        passwordField.setVisible(isBasic || isBearer);
+        passwordLabel.setVisible(isBasic || isBearer);
     }
 
     private void updateDetailsPanelVisibility(Repository repo) {

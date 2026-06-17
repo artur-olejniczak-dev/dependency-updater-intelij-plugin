@@ -44,8 +44,6 @@
     <!-- Dependencies on other plugins (to access Maven and Java PSI structures) -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
-    <depends>org.jetbrains.idea.maven</depends>
-    <depends>org.jetbrains.plugins.gradle</depends>
 
     <!-- Extension declarations (Tool windows, actions, services) -->
     <extensions defaultExtensionNs="com.intellij">
