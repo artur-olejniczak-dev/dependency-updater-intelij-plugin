@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.example.dependencyupdater"
-version = "1.1-SNAPSHOT"
+version = "1.2-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -54,7 +54,7 @@ tasks {
 
 intellijPlatform {
     pluginConfiguration {
-        version.set("1.1")
+        version.set("1.2")
         ideaVersion {
             sinceBuild.set("251")
             untilBuild.set("262.*")
