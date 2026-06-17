@@ -22,8 +22,10 @@
       <b>Version 1.2</b>
       <ul>
         <li><b>Custom Repositories:</b> Added a new Settings page to manage multiple custom artifact repositories.</li>
-        <li><b>Secure Authentication:</b> Full support for Basic (Username/Password) and Bearer Token authentication via IntelliJ PasswordSafe.</li>
+        <li><b>Global Predefined Defaults:</b> Quickly add standard global repositories (Maven Central, Google, Spring, JBoss) from a dedicated dropdown menu.</li>
+        <li><b>Secure Authentication:</b> Full support for Basic (Username/Password) and Bearer Token authentication via IntelliJ PasswordSafe. UI dynamically adapts to your Auth Type.</li>
         <li><b>Concurrent Fetching:</b> The plugin now queries all configured repositories simultaneously to fetch the latest dependency versions.</li>
+        <li><b>Standalone Compatibility:</b> Removed hard IDE constraints. The plugin now works flawlessly even on strictly restricted corporate IDE instances where official Maven or Gradle plugins are disabled.</li>
       </ul>
       <br>
       <b>Version 1.1</b>
