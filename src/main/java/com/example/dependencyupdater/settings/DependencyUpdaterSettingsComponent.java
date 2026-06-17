@@ -51,7 +51,7 @@ public class DependencyUpdaterSettingsComponent {
         });
 
         JPanel listPanel = ToolbarDecorator.createDecorator(repositoryList)
-                .setAddAction(button -> addRepository())
+                .setAddAction(button -> showAddPopupMenu(button.getContextComponent()))
                 .setRemoveAction(button -> removeRepository())
                 .createPanel();
 
@@ -152,8 +152,40 @@ public class DependencyUpdaterSettingsComponent {
         }
     }
 
-    private void addRepository() {
-        Repository repo = new Repository("New Repository", "https://");
+    private void showAddPopupMenu(Component parent) {
+        JPopupMenu popup = new JPopupMenu();
+        
+        JMenuItem customItem = new JMenuItem("Custom Repository...");
+        customItem.addActionListener(e -> addRepository("New Custom Repository", "https://"));
+        popup.add(customItem);
+        
+        popup.addSeparator();
+
+        JMenuItem mavenItem = new JMenuItem("Maven Central");
+        mavenItem.addActionListener(e -> addRepository("Maven Central", "https://repo1.maven.org/maven2/"));
+        popup.add(mavenItem);
+
+        JMenuItem googleItem = new JMenuItem("Google Maven");
+        googleItem.addActionListener(e -> addRepository("Google Maven", "https://maven.google.com/"));
+        popup.add(googleItem);
+
+        JMenuItem jbossItem = new JMenuItem("JBoss Repository");
+        jbossItem.addActionListener(e -> addRepository("JBoss Repository", "https://repository.jboss.org/nexus/content/groups/public/"));
+        popup.add(jbossItem);
+
+        JMenuItem springItem = new JMenuItem("Spring Plugins");
+        springItem.addActionListener(e -> addRepository("Spring Plugins", "https://repo.spring.io/plugins-release/"));
+        popup.add(springItem);
+
+        JMenuItem gradleItem = new JMenuItem("Gradle Plugin Portal");
+        gradleItem.addActionListener(e -> addRepository("Gradle Plugin Portal", "https://plugins.gradle.org/m2/"));
+        popup.add(gradleItem);
+
+        popup.show(parent, 0, parent.getHeight());
+    }
+
+    private void addRepository(String name, String url) {
+        Repository repo = new Repository(name, url);
         listModel.add(repo);
         repositoryList.setSelectedValue(repo, true);
     }
