@@ -1,7 +1,7 @@
-<idea-plugin>
+<idea-plugin url="https://github.com/artur-olejniczak-dev/dependency-updater-intelij-plugin#readme">
     <id>pl.artoledev.dependencyupdater</id>
     <name>DependencyUpdater</name>
-    <vendor email="artur.olejniczak.dev@gmail.com" > Artur Olejniczak</vendor>
+    <vendor email="artur.olejniczak.dev@gmail.com" url="https://github.com/artur-olejniczak-dev/dependency-updater-intelij-plugin"> Artur Olejniczak</vendor>
 
     <description><![CDATA[
       <h3>The ultimate dependency manager and security scanner for IntelliJ IDEA</h3>
