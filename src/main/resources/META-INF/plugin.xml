@@ -19,7 +19,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      <b>Version 1.2</b>
+      <b>Version 1.3</b>
       <ul>
         <li><b>Custom Repositories:</b> Added a new Settings page to manage multiple custom artifact repositories.</li>
         <li><b>Global Predefined Defaults:</b> Quickly add standard global repositories (Maven Central, Google, Spring, JBoss) from a dedicated dropdown menu.</li>
