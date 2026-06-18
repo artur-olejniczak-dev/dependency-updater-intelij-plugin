@@ -5,6 +5,7 @@ import com.intellij.credentialStore.CredentialAttributesKt;
 import com.intellij.credentialStore.Credentials;
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.ToolbarDecorator;
@@ -193,6 +194,16 @@ public class DependencyUpdaterSettingsComponent {
     }
 
     private void addRepository(String name, String url) {
+        for (Repository r : listModel.getItems()) {
+            if (r.getName().trim().equalsIgnoreCase(name.trim())) {
+                Messages.showErrorDialog(mainPanel, "A repository with the name '" + name + "' already exists.", "Duplicate Repository");
+                return;
+            }
+            if (!url.trim().equals("https://") && r.getUrl().trim().equalsIgnoreCase(url.trim())) {
+                Messages.showErrorDialog(mainPanel, "A repository with the URL '" + url + "' already exists.", "Duplicate Repository");
+                return;
+            }
+        }
         Repository repo = new Repository(name, url);
         listModel.add(repo);
         repositoryList.setSelectedValue(repo, true);
