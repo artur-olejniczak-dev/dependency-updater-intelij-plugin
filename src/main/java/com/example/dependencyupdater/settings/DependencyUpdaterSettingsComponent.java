@@ -177,15 +177,15 @@ public class DependencyUpdaterSettingsComponent {
         popup.add(customItem);
         
 
-        JMenuItem jfrogItem = new JMenuItem("JFrog Artifactory (HTML)");
+        JMenuItem jfrogItem = new JMenuItem("JFrog");
         jfrogItem.addActionListener(e -> {
             for (Repository r : listModel.getItems()) {
-                if (r.getName().trim().equalsIgnoreCase("JFrog Artifactory (HTML)")) {
+                if (r.getName().trim().equalsIgnoreCase("JFrog")) {
                     Messages.showErrorDialog(mainPanel, "A repository with the name 'JFrog Artifactory (HTML)' already exists.", "Duplicate Repository");
                     return;
                 }
             }
-            Repository repo = new Repository("JFrog Artifactory (HTML)", "");
+            Repository repo = new Repository("JFrog", "");
             repo.setHtmlListing(true);
             repo.setAuthType(Repository.AuthType.BEARER);
             listModel.add(repo);
