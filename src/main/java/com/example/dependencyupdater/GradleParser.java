@@ -214,4 +214,25 @@ public class GradleParser {
             }
         }
     }
+
+    public void updateTransitiveDependency(Project project, Dependency dependency, String newVersion) {
+        String coord = dependency.getGroupId() + ":" + dependency.getArtifactId() + ":" + newVersion;
+        
+        for (VirtualFile gradleFile : getGradleFiles(project)) {
+            modifyFile(gradleFile, content -> {
+                String toAppend;
+                if (gradleFile.getName().endsWith(".kts")) {
+                    toAppend = "\nconfigurations.all {\n    resolutionStrategy {\n        force(\"" + coord + "\")\n    }\n}\n";
+                } else {
+                    toAppend = "\nconfigurations.all {\n    resolutionStrategy {\n        force '" + coord + "'\n    }\n}\n";
+                }
+                
+                if (content.contains("force '" + coord + "'") || content.contains("force(\"" + coord + "\")")) {
+                    return content;
+                }
+                return content + toAppend;
+            });
+        }
+    }
+
 }
