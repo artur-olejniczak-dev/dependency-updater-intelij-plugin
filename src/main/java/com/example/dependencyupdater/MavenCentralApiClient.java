@@ -33,7 +33,7 @@ public class MavenCentralApiClient {
                 }
                 String url;
                 if (repo.isHtmlListing()) {
-                    url = String.format("%s%s/%s/", baseUrl, groupPath, artifactId);
+                    url = String.format("%slibs-release/%s/%s/", baseUrl, groupPath, artifactId);
                 } else {
                     url = String.format("%s%s/%s/maven-metadata.xml", baseUrl, groupPath, artifactId);
                 }
