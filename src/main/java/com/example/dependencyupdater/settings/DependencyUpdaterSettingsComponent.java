@@ -104,6 +104,14 @@ public class DependencyUpdaterSettingsComponent {
         
         passwordField.setVisible(isBasic || isBearer);
         passwordLabel.setVisible(isBasic || isBearer);
+        
+        if (isBasic) {
+            passwordLabel.setText("Password:");
+        } else if (isBearer) {
+            passwordLabel.setText("Token:");
+        } else {
+            passwordLabel.setText("Password / Token:");
+        }
     }
 
     private void updateDetailsPanelVisibility(Repository repo) {
