@@ -150,18 +150,17 @@ public class TransitiveDependencyPanel extends JPanel {
         
         leftToolbar.add(scanButton);
         leftToolbar.add(stopButton);
-        leftToolbar.add(updateButton);
         
         JLabel infoLabel = new JLabel(" (Detects vulnerabilities in hidden background packages.)");
-
         infoLabel.setForeground(Color.GRAY);
-
         leftToolbar.add(infoLabel);
-
+        
+        JPanel rightToolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        rightToolbar.add(updateButton);
+        
         topPanel.add(leftToolbar, BorderLayout.WEST);
-
+        topPanel.add(rightToolbar, BorderLayout.EAST);
         add(topPanel, BorderLayout.NORTH);
-
     }
 
 
