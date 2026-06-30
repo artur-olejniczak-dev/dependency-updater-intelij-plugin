@@ -100,7 +100,7 @@ public class DependencyUpdaterPanel extends JPanel {
 
                 }
 
-                if (column == 1 || column == 4) return true; 
+                if (column == 1 || column == 2 || column == 4) return true; 
 
                 return false;
 
@@ -208,6 +208,7 @@ public class DependencyUpdaterPanel extends JPanel {
 
         table.getColumnModel().getColumn(1).setCellEditor(readOnlyEditor);
 
+        table.getColumnModel().getColumn(2).setCellEditor(readOnlyEditor);
         table.getColumnModel().getColumn(4).setCellEditor(readOnlyEditor);
 
         JBScrollPane scrollPane = new JBScrollPane(table);
