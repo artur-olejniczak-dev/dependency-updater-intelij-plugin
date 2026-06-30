@@ -31,7 +31,12 @@ public class MavenCentralApiClient {
                 if (!baseUrl.endsWith("/")) {
                     baseUrl += "/";
                 }
-                String url = String.format("%s%s/%s/maven-metadata.xml", baseUrl, groupPath, artifactId);
+                String url;
+                if (repo.isHtmlListing()) {
+                    url = String.format("%s%s/%s/", baseUrl, groupPath, artifactId);
+                } else {
+                    url = String.format("%s%s/%s/maven-metadata.xml", baseUrl, groupPath, artifactId);
+                }
 
                 try {
                     return HttpRequests.request(url)
@@ -60,7 +65,11 @@ public class MavenCentralApiClient {
                 }
             }).thenApply(body -> {
                 if (body != null) {
-                    return parseVersions(body);
+                    if (repo.isHtmlListing()) {
+                        return parseHtmlVersions(body);
+                    } else {
+                        return parseVersions(body);
+                    }
                 }
                 return new ArrayList<String>();
             }).exceptionally(ex -> new ArrayList<>());
@@ -82,6 +91,21 @@ public class MavenCentralApiClient {
         try {
             java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("<version>(.*?)</version>");
             java.util.regex.Matcher matcher = pattern.matcher(xmlBody);
+            while (matcher.find()) {
+                versions.add(matcher.group(1));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return versions;
+    }
+
+    List<String> parseHtmlVersions(String htmlBody) {
+        List<String> versions = new ArrayList<>();
+        if (htmlBody == null || htmlBody.isEmpty()) return versions;
+        try {
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("href=\"([0-9][^\"]+)/\"");
+            java.util.regex.Matcher matcher = pattern.matcher(htmlBody);
             while (matcher.find()) {
                 versions.add(matcher.group(1));
             }

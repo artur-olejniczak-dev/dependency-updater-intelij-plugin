@@ -168,7 +168,26 @@ public class DependencyUpdaterSettingsComponent {
         customItem.addActionListener(e -> addRepository("New Custom Repository", "https://"));
         popup.add(customItem);
         
+
+        JMenuItem jfrogItem = new JMenuItem("JFrog Artifactory (HTML)");
+        jfrogItem.addActionListener(e -> {
+            for (Repository r : listModel.getItems()) {
+                if (r.getName().trim().equalsIgnoreCase("JFrog Artifactory (HTML)")) {
+                    Messages.showErrorDialog(mainPanel, "A repository with the name 'JFrog Artifactory (HTML)' already exists.", "Duplicate Repository");
+                    return;
+                }
+            }
+            Repository repo = new Repository("JFrog Artifactory (HTML)", "");
+            repo.setHtmlListing(true);
+            repo.setAuthType(Repository.AuthType.BEARER);
+            listModel.add(repo);
+            repositoryList.setSelectedValue(repo, true);
+        });
+        popup.add(jfrogItem);
+        
         popup.addSeparator();
+
+
 
         JMenuItem mavenItem = new JMenuItem("Maven Central");
         mavenItem.addActionListener(e -> addRepository("Maven Central", "https://repo1.maven.org/maven2/"));

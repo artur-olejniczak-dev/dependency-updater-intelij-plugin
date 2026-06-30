@@ -30,6 +30,7 @@ public class Repository {
     private String url;
     private AuthType authType = AuthType.NONE;
     private String username;
+    private boolean isHtmlListing = false;
 
     public Repository() {
         this.id = UUID.randomUUID().toString();
@@ -81,6 +82,15 @@ public class Repository {
         this.username = username;
     }
 
+
+    public boolean isHtmlListing() {
+        return isHtmlListing;
+    }
+
+    public void setHtmlListing(boolean htmlListing) {
+        isHtmlListing = htmlListing;
+    }
+
     public Repository cloneRepo() {
         Repository copy = new Repository();
         copy.id = this.id;
@@ -88,6 +98,7 @@ public class Repository {
         copy.url = this.url;
         copy.authType = this.authType;
         copy.username = this.username;
+        copy.isHtmlListing = this.isHtmlListing;
         return copy;
     }
 
@@ -96,11 +107,11 @@ public class Repository {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Repository that = (Repository) o;
-        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(url, that.url) && authType == that.authType && Objects.equals(username, that.username);
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(url, that.url) && authType == that.authType && Objects.equals(username, that.username) && isHtmlListing == that.isHtmlListing;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, url, authType, username);
+        return Objects.hash(id, name, url, authType, username, isHtmlListing);
     }
 }
