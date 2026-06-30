@@ -10,15 +10,25 @@
       
       <h4>Key Features:</h4>
       <ul>
-        <li>🚀 <b>Full Maven & Gradle Support:</b> Seamlessly parses <code>pom.xml</code> and <code>build.gradle / build.gradle.kts</code> files.</li>
+        <li>🚀 <b>Full Maven & Gradle Support:</b> Seamlessly parses <code>pom.xml</code>, <code>build.gradle / build.gradle.kts</code> and <code>libs.versions.toml</code> files.</li>
+        <li>🧩 <b>Gradle Plugins Update:</b> Support for scanning and updating Gradle plugins configured within <code>plugins {}</code> block (both Groovy and Kotlin DSLs).</li>
         <li>🛡️ <b>Security Scanning (OSV API):</b> Automatically detects Common Vulnerabilities and Exposures (CVE) in your direct and <b>transitive</b> dependencies.</li>
         <li>🔄 <b>Smart Version Updates:</b> Discovers newer library versions directly from your configured artifact repositories.</li>
-        <li>🔐 <b>Custom Repositories:</b> Connects to private registries (like JFrog Artifactory) with safe Bearer Token and Basic authentication.</li>
+        <li>🏢 <b>Enterprise Ready:</b> Built-in native support for Corporate Proxies and custom SSL Certificates (JFrog Artifactory compatibility).</li>
+        <li>🔐 <b>Custom Repositories:</b> Connects to private registries with safe Bearer Token and Basic authentication.</li>
         <li>🎯 <b>LTS Filtering:</b> Highlights Long Term Support (LTS) releases for safer enterprise upgrades.</li>
       </ul>
     ]]></description>
 
     <change-notes><![CDATA[
+      <b>Version 1.4</b>
+      <ul>
+        <li><b>Gradle Plugins Support:</b> Full parsing and auto-updating functionality for Gradle <code>plugins {}</code> blocks (Groovy, Kotlin DSL) and TOML plugin references.</li>
+        <li><b>Corporate Proxy & SSL:</b> Migrated underlying HTTP engine to IntelliJ native <code>HttpRequests</code> for robust handling of Enterprise Proxies and Custom SSL Certificates (JFrog).</li>
+        <li><b>Improved History View:</b> Reintroduced visibility of older versions in the dropdown list to accurately reflect past security vulnerabilities (CVEs).</li>
+        <li><b>Bugfixes:</b> Patched minor UI glitches and optimized regex matchers for <code>libs.versions.toml</code> syntax.</li>
+      </ul>
+      <br>
       <b>Version 1.3</b>
       <ul>
         <li><b>Custom Repositories:</b> Added a new Settings page to manage multiple custom artifact repositories.</li>
