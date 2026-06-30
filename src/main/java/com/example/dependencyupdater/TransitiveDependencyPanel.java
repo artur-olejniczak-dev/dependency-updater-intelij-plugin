@@ -191,9 +191,7 @@ public class TransitiveDependencyPanel extends JPanel {
         int result = JOptionPane.showConfirmDialog(this, "Are you sure you want to enforce new versions for " + toUpdate.size() + " transitive dependencies?", "Confirm Update", JOptionPane.YES_NO_OPTION);
         if (result == JOptionPane.YES_OPTION) {
             com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(project, () -> {
-                for (int i = 0; i < toUpdate.size(); i++) {
-                    gradleParser.updateTransitiveDependency(project, toUpdate.get(i), newVersions.get(i));
-                }
+                gradleParser.updateTransitiveDependencies(project, toUpdate, newVersions);
             });
             JOptionPane.showMessageDialog(this, "Transitive dependencies updated successfully! Please refresh Gradle.", "Success", JOptionPane.INFORMATION_MESSAGE);
         }

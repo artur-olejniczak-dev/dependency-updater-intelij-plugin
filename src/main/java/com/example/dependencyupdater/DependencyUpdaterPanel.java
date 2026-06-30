@@ -50,7 +50,6 @@ public class DependencyUpdaterPanel extends JPanel {
 
     private JCheckBox ltsOnlyCheckBox;
 
-    private JCheckBox hideUpToDateCheckBox;
 
     private JButton scanButton;
 
@@ -233,8 +232,6 @@ public class DependencyUpdaterPanel extends JPanel {
 
         ltsOnlyCheckBox = new JCheckBox("LTS Only", true);
 
-        hideUpToDateCheckBox = new JCheckBox("Hide Up-to-date", false);
-
         scanButton.addActionListener(e -> performScan());
 
         stopButton.addActionListener(e -> stopAndClear());
@@ -247,25 +244,11 @@ public class DependencyUpdaterPanel extends JPanel {
 
         ltsOnlyCheckBox.addActionListener(e -> performScan());
 
-        hideUpToDateCheckBox.addActionListener(e -> {
-
-            tableModel.setRowCount(0);
-
-            refreshTable();
-
-        });
-
         leftToolbar.add(scanButton);
-
         leftToolbar.add(stopButton);
-
         leftToolbar.add(selectAllButton);
-
         leftToolbar.add(deselectAllButton);
-
         leftToolbar.add(ltsOnlyCheckBox);
-
-        leftToolbar.add(hideUpToDateCheckBox);
 
         rightToolbar.add(updateButton); 
 
@@ -541,7 +524,7 @@ public class DependencyUpdaterPanel extends JPanel {
 
                                   !dropdown.options.get(0).contains("Connection");
 
-            if (hideUpToDateCheckBox.isSelected() && !isUpdatable) {
+            if (!isUpdatable) {
 
                 continue; 
 

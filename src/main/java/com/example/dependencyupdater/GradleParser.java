@@ -215,22 +215,36 @@ public class GradleParser {
         }
     }
 
-    public void updateTransitiveDependency(Project project, Dependency dependency, String newVersion) {
-        String coord = dependency.getGroupId() + ":" + dependency.getArtifactId() + ":" + newVersion;
+    public void updateTransitiveDependencies(Project project, java.util.List<Dependency> dependencies, java.util.List<String> newVersions) {
+        if (dependencies.isEmpty()) return;
         
         for (VirtualFile gradleFile : getGradleFiles(project)) {
             modifyFile(gradleFile, content -> {
-                String toAppend;
-                if (gradleFile.getName().endsWith(".kts")) {
-                    toAppend = "\nconfigurations.all {\n    resolutionStrategy {\n        force(\"" + coord + "\")\n    }\n}\n";
-                } else {
-                    toAppend = "\nconfigurations.all {\n    resolutionStrategy {\n        force '" + coord + "'\n    }\n}\n";
-                }
+                StringBuilder block = new StringBuilder();
+                block.append("\nconfigurations.all {\n    resolutionStrategy {\n");
                 
-                if (content.contains("force '" + coord + "'") || content.contains("force(\"" + coord + "\")")) {
+                boolean addedAny = false;
+                for (int i = 0; i < dependencies.size(); i++) {
+                    Dependency dep = dependencies.get(i);
+                    String coord = dep.getGroupId() + ":" + dep.getArtifactId() + ":" + newVersions.get(i);
+                    
+                    if (content.contains("force '" + coord + "'") || content.contains("force(\"" + coord + "\")")) {
+                        continue; // Already there
+                    }
+                    
+                    addedAny = true;
+                    if (gradleFile.getName().endsWith(".kts")) {
+                        block.append("        force(\"").append(coord).append("\")\n");
+                    } else {
+                        block.append("        force '").append(coord).append("'\n");
+                    }
+                }
+                block.append("    }\n}\n");
+                
+                if (!addedAny) {
                     return content;
                 }
-                return content + toAppend;
+                return content + block.toString();
             });
         }
     }
