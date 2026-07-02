@@ -393,11 +393,9 @@ public class DependencyUpdaterPanel extends JPanel {
                     }
 
                     List<String> higherVersions = versions.stream()
-
+                            .filter(v -> compareVersions(v, dep.getCurrentVersion()) > 0)
                             .sorted((v1, v2) -> compareVersions(v2, v1)) 
-
                             .limit(15)
-
                             .collect(Collectors.toList());
 
                     List<CompletableFuture<String>> versionFutures = new ArrayList<>();
