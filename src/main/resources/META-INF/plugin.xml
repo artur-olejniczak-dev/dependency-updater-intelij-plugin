@@ -13,14 +13,21 @@
         <li>🚀 <b>Full Maven & Gradle Support:</b> Seamlessly parses <code>pom.xml</code>, <code>build.gradle / build.gradle.kts</code> and <code>libs.versions.toml</code> files.</li>
         <li>🧩 <b>Gradle Plugins Update:</b> Support for scanning and updating Gradle plugins configured within <code>plugins {}</code> block (both Groovy and Kotlin DSLs).</li>
         <li>🛡️ <b>Security Scanning (OSV API):</b> Automatically detects Common Vulnerabilities and Exposures (CVE) in your direct and <b>transitive</b> dependencies.</li>
-        <li>🔄 <b>Smart Version Updates:</b> Discovers newer library versions directly from your configured artifact repositories.</li>
+        <li>🔄 <b>Smart Version Updates:</b> Discovers newer library versions directly from your configured artifact repositories. Automatically filters out already up-to-date dependencies for clean, distraction-free lists.</li>
         <li>🏢 <b>Enterprise Ready:</b> Built-in native support for Corporate Proxies and custom SSL Certificates (JFrog Artifactory compatibility).</li>
-        <li>🔐 <b>Custom Repositories:</b> Connects to private registries with safe Bearer Token and Basic authentication.</li>
-        <li>🎯 <b>LTS Filtering:</b> Highlights Long Term Support (LTS) releases for safer enterprise upgrades.</li>
+        <li>🔐 <b>Custom Repositories:</b> Connects to private registries with safe Bearer Token and Basic authentication. Includes predefined HTML directory listing scanner for private JFrog instances.</li>
+        <li>🎯 <b>LTS & Beta Filtering:</b> Advanced version recognition differentiating between Long Term Support (LTS) releases and experimental Beta/Snapshot builds.</li>
       </ul>
     ]]></description>
 
     <change-notes><![CDATA[
+      <b>Version 1.5</b>
+      <ul>
+        <li><b>Smart Up-to-Date Filtering:</b> The Direct Dependencies list now intelligently hides libraries that are already at their latest versions, keeping your view focused and distraction-free. Switching between LTS and Beta modes dynamically updates visibility based on available builds.</li>
+        <li><b>Advanced LTS/Beta Recognition:</b> Enhanced version parsing engine that accurately classifies corporate naming conventions and JFrog Artifactory builds (such as timestamped snapshots, <code>-dev</code>, <code>-preview</code>, and <code>-ea</code> qualifiers).</li>
+        <li><b>Streamlined Transitive Scanning:</b> Transitive dependency analysis has been streamlined to focus purely on background vulnerability detection (CVE scanning) and version auditing, removing automatic build file modification for safer builds.</li>
+      </ul>
+      <br>
       <b>Version 1.4</b>
       <ul>
         <li><b>Gradle Plugins Support:</b> Full parsing and auto-updating functionality for Gradle <code>plugins {}</code> blocks (Groovy, Kotlin DSL) and TOML plugin references.</li>
